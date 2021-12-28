@@ -1,56 +1,91 @@
 package com.abdulhalim.service.Implementation;
 
 import com.abdulhalim.entity.Department;
+import com.abdulhalim.dto.request.DepartmentRequestDto;
+import com.abdulhalim.dto.response.DepartmentResponseDto;
+import com.abdulhalim.entity.Employee;
 import com.abdulhalim.repository.DepartmentRepository;
 import com.abdulhalim.service.DepartmentService;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @AllArgsConstructor
 @Service
 public class DepartmentServiceImpl implements DepartmentService {
 
-    private final DepartmentRepository deptRepo;
+    public final DepartmentRepository departmentRepository;
+
 
     @Override
-    public Department saveDepartment(Department dept) {
-        return deptRepo.save(dept);
+    public ResponseEntity<Department> createDepartment(DepartmentRequestDto departmentRequestDto) {
+
+        Department department = new Department();
+        BeanUtils.copyProperties(departmentRequestDto,department);
+        departmentRepository.saveAndFlush(department);
+
+        return new ResponseEntity<>(department, HttpStatus.CREATED);
     }
 
     @Override
-    public Department updateDepartment(Department dept) {
-        return deptRepo.save(dept);
-    }
+    public ResponseEntity<Void> updateDepartment(Long departmentId, DepartmentRequestDto departmentRequestDto) {
+        Optional<Department> optionalDepartment = departmentRepository.findById(departmentId);
 
-    @Override
-    public Object deleteDepartmentById(Long id) {
-        HashMap<String,String> deleteMsg = new HashMap<>();
-        try {
-            deptRepo.delete(deptRepo.findById(id).get());
-        }catch (NoSuchElementException e){
-            deleteMsg.put("id: "+id,"Not Found");
-            return deleteMsg;
-        }catch (Exception e){
-            deleteMsg.put("id: "+id,"Sorry! can not delete parent row.");
-            return deleteMsg;
+        if (!optionalDepartment.isPresent()){
+            throw new RuntimeException("Not found Employee");
         }
-        deleteMsg.put("id: "+id,"Department has been successfully deleted.");
-        return deleteMsg;
+
+        Department department = optionalDepartment.get();
+
+        department.setDepartmentName(departmentRequestDto.getDepartmentName());
+
+        department.setActive(departmentRequestDto.isActive());
+
+        departmentRepository.save(department);
+
+        return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
 
     @Override
-    public Department getDepartmentById(Long id) {
-        Department dept = deptRepo.findById(id).get();
-        return dept;
+    public ResponseEntity<DepartmentResponseDto> getAllDepartmentList() {
+
+        List<DepartmentResponseDto> departmentResponseDtoArrayList = new ArrayList<>();
+
+        List<Department> departmentList = departmentRepository.findAll();
+
+        for (Department department: departmentList){
+
+            DepartmentResponseDto departmentResponseDto = new DepartmentResponseDto();
+
+            departmentResponseDto.setId(department.getId());
+            departmentResponseDto.setDepartmentName(department.getDepartmentName());
+            departmentResponseDto.setActive(department.isActive());
+
+            departmentResponseDtoArrayList.add(departmentResponseDto);
+        }
+
+
+        return new ResponseEntity(departmentResponseDtoArrayList,HttpStatus.OK);
+
     }
 
     @Override
-    public List<Department> getAllDepartment() {
-        List<Department> deptList = deptRepo.findAll();
-        return deptList;
+    public DepartmentResponseDto getDepartmentBy(Long id) {
+//        Optional<Department> departmentOptional = departmentRepository.findById(id);
+//
+//        Department department = departmentOptional.get();
+//        return DepartmentResponseDto.builder()
+//                .id(department.getId())
+//                .departmentName(department.getDepartmentName())
+//                .active(department.isActive())
+//                .build();
+        return null;
     }
+
 }

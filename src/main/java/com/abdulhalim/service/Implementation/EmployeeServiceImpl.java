@@ -1,95 +1,96 @@
 package com.abdulhalim.service.Implementation;
 
-import com.abdulhalim.dto.EmployeeDto;
+import com.abdulhalim.config.UniqueKeyConfiguration;
+import com.abdulhalim.entity.Department;
 import com.abdulhalim.entity.Employee;
+import com.abdulhalim.dto.request.EmployeeRequestDto;
+import com.abdulhalim.dto.response.EmployeeResponseDto;
+import com.abdulhalim.repository.DepartmentRepository;
 import com.abdulhalim.repository.EmployeeRepository;
 import com.abdulhalim.service.EmployeeService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 @AllArgsConstructor
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 
-    private final EmployeeRepository employeeRepo;
+    private final EmployeeRepository employeeRepository;
+    private final DepartmentRepository departmentRepository;
+    private final UniqueKeyConfiguration uniqueKeyConfiguration;
 
     @Override
-    public Object saveEmployee(Employee employee) {
-        Employee employee1 = employeeRepo.findEmployeeByCode(employee.getCode());
+    public ResponseEntity<Employee> createEmployee(EmployeeRequestDto employeeRequestDto) {
 
-        if (employee1 == null){
-            return employeeRepo.save(employee);
+        String ff = uniqueKeyConfiguration.uuid().getUuid().toString();
+        Employee employee = new Employee();
+        BeanUtils.copyProperties(employeeRequestDto,employee);
+        Optional<Department> optionalDepartment = departmentRepository.findById(employeeRequestDto.getDepartmentId());
+//        employee.setCode(ff);
+        employee.setDepartment(optionalDepartment.get());
+        employeeRepository.saveAndFlush(employee);
+        return new ResponseEntity<>(employee, HttpStatus.CREATED);
+    }
+
+    @Override
+    public ResponseEntity<EmployeeResponseDto> getAllEmployeeList() {
+        List<EmployeeResponseDto> employeeResponseDtoList = new ArrayList<>();
+        List<Employee> employeeList = employeeRepository.findAll();
+        for (Employee employee: employeeList){
+
+            EmployeeResponseDto employeeResponseDto = new EmployeeResponseDto();
+
+            employeeResponseDto.setId(employee.getId());
+            employeeResponseDto.setCode(employee.getCode());
+            employeeResponseDto.setName(employee.getName());
+            employeeResponseDto.setDob(employee.getDob());
+            employeeResponseDto.setGender(employee.getGender());
+            employeeResponseDto.setDepartment(employee.getDepartment());
+
+            employeeResponseDtoList.add(employeeResponseDto);
         }
-        HashMap<String,String> dublicateMsg = new HashMap<>();
-        dublicateMsg.put("code","Already exists of the code.Please try again...");
-        return dublicateMsg;
-
+        return new ResponseEntity(employeeResponseDtoList,HttpStatus.OK);
     }
 
     @Override
-    public Object updateEmployee(Employee employee) {
-        Employee employee1 = employeeRepo.findEmployeeByCode(employee.getCode());
+    public ResponseEntity<Void> updateEmployee(Long employeeId,EmployeeRequestDto employeeRequestDto) {
 
-        if (employee1 == null){
-            return employeeRepo.save(employee);
+        Optional<Employee> employeeOptional = employeeRepository.findById(employeeId);
+
+        if (!employeeOptional.isPresent()){
+            throw new RuntimeException("Not found Employee");
         }
 
-        String codeExistId = employee1.getId().toString();
-        String codeId = employee.getId().toString();
-        if (codeExistId.equals(codeId)){
-            return employeeRepo.save(employee);
+        Optional<Department> departmentOptional = departmentRepository.findById(employeeRequestDto.getDepartmentId());
+
+        if (!departmentOptional.isPresent()){
+            throw new RuntimeException("Not found Department");
         }
-            HashMap<String,String> dublicateMsg = new HashMap<>();
-            dublicateMsg.put("code","Already exists of the code.Please try again...");
-            return dublicateMsg;
-    }
+        Department department = departmentOptional.get();
 
-    @Override
-    public Object deleteEmployeeById(Long id) {
-        HashMap<String,String> deleteMsg = new HashMap<>();
-        try {
-            Employee employee = employeeRepo.findById(id).get();
-        }catch (NoSuchElementException e){
-            deleteMsg.put("id: "+id,"Not Found");
-            return deleteMsg;
-        }
-        employeeRepo.delete(employeeRepo.findById(id).get());
-        deleteMsg.put("id: "+id,"Employee has been successfully deleted.");
-        return deleteMsg;
-    }
+        Employee employee = employeeOptional.get();
 
-    @Override
-    public Employee getEmployeeById(Long id) {
-        Employee employee = employeeRepo.findById(id).get();
-        return employee;
-    }
+//        employee.setCode(uniqueKeyConfiguration.uuid().getUuid().toString());
 
-    @Override
-    public List<Employee> getAllEmployee() {
-        List<Employee> employeeList = employeeRepo.findAll();
-        return employeeList;
-    }
+        employee.setName(employeeRequestDto.getName());
 
-    @Override
-    public List<EmployeeDto> findAllEmployee() {
-        List<EmployeeDto> dtos = new ArrayList<>();
-        this.employeeRepo.findAll().parallelStream().forEach((e)->{
-            dtos.add(convertEntityToDto(e));
-        });
-        return dtos;
-    }
+        employee.setCode(employeeRequestDto.getCode());
 
-    @Override
-    public EmployeeDto convertEntityToDto(Employee employee) {
-        EmployeeDto dto = new EmployeeDto();
-        BeanUtils.copyProperties(employee,dto);
-        dto.setDepartmentName(employee.getDepartment().getDepartmentName());
-        return dto;
+        employee.setDob(employeeRequestDto.getDob());
+
+        employee.setGender(employeeRequestDto.getGender());
+
+        employee.setMobile(employeeRequestDto.getMobile());
+
+        employee.setDepartment(department);
+
+        employeeRepository.save(employee);
+
+        return new ResponseEntity(HttpStatus.NO_CONTENT);
     }
 }

@@ -1,12 +1,13 @@
-package com.abdulhalim.dto;
+package com.abdulhalim.dto.response;
 
-import com.abdulhalim.enums.Gender;
+import com.abdulhalim.entity.Department;
+import com.abdulhalim.entity.Gender;
 import lombok.Data;
 
 import java.time.LocalDate;
 
 @Data
-public class EmployeeDto {
+public class EmployeeResponseDto {
 
     private Long id;
 
@@ -20,5 +21,5 @@ public class EmployeeDto {
 
     private String mobile;
 
-    private String departmentName;
+    private Department department;
 }

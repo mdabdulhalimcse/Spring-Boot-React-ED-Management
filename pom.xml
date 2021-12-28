@@ -12,7 +12,7 @@
     <artifactId>tecnical-assessment</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>tecnical-assessment</name>
-    <description>Technical assessment application Spring Boot REST API </description>
+    <description>You are to make application Spring Boot REST API </description>
     <properties>
         <java.version>11</java.version>
     </properties>

@@ -6,7 +6,7 @@ spring:
       ddl-auto: update
   datasource:
     platform: mysql
-    url: jdbc:mysql://localhost:3306/assessment-ibcs-primax?createDatabaseIfNotExist=true
+    url: jdbc:mysql://localhost:3306/assessment-ibcs-primax-db?createDatabaseIfNotExist=true
     username: root
     password: mysql
     driverClassName: com.mysql.cj.jdbc.Driver
